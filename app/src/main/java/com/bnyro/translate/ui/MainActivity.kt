@@ -8,11 +8,13 @@ import android.os.Bundle
 import android.os.Parcelable
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.rememberNavController
+import com.bnyro.translate.R
 import com.bnyro.translate.ext.hexToColor
 import com.bnyro.translate.ext.parcelable
 import com.bnyro.translate.ui.models.TranslationModel
@@ -21,9 +23,11 @@ import com.bnyro.translate.ui.theme.TranslateYouTheme
 import com.bnyro.translate.util.JsonHelper
 import com.bnyro.translate.util.LocaleHelper
 import com.bnyro.translate.util.Preferences
+import com.canhub.cropper.CropImageActivity
+import com.canhub.cropper.CropImageView
 import kotlinx.serialization.encodeToString
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     private lateinit var mainModel: TranslationModel
     var themeMode by mutableStateOf(
         Preferences.getThemeMode()
@@ -36,7 +40,6 @@ class MainActivity : ComponentActivity() {
         mainModel = ViewModelProvider(this)[TranslationModel::class.java]
 
         super.onCreate(savedInstanceState)
-
         setContent {
             TranslateYouTheme(themeMode, accentColor?.hexToColor()) {
                 val navController = rememberNavController()
@@ -84,4 +87,5 @@ class MainActivity : ComponentActivity() {
             mainModel.processImage(this, it)
         }
     }
+
 }

@@ -168,9 +168,7 @@ object TessHelper {
 
         tess.setImage(bitmap)
         tess.getHOCRText(0)
-        tess.getHOCRText(0)
-        var text = tess.utF8Text
-        return text
+        return tess.utF8Text
     }
 
     fun downloadLanguageData(context: Context, language: String) {

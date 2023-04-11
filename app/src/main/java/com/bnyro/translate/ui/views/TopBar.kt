@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -51,6 +52,10 @@ import com.bnyro.translate.util.ClipboardHelper
 import com.bnyro.translate.util.ComposeFileProvider
 import com.bnyro.translate.util.SpeechHelper
 import com.bnyro.translate.util.TessHelper
+import com.canhub.cropper.CropImageContract
+import com.canhub.cropper.CropImageContractOptions
+import com.canhub.cropper.CropImageOptions
+import com.canhub.cropper.CropImageView
 import java.time.format.TextStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,21 +75,12 @@ fun TopBar(
 
     val context = LocalContext.current
     val handler = Handler(Looper.getMainLooper())
-    val fileChooser = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) {
-        // 3
-        hasImage = it != null
-        imageUri = it
-        mainModel.processImage(context, it)
-    }
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture(),
-        onResult = { success ->
-            hasImage = success
-            mainModel.processImage(context, imageUri)
+    val cropLauncher = rememberLauncherForActivityResult(CropImageContract()) { result ->
+        if (result.isSuccessful) {
+            hasImage = true
+            mainModel.processImage(context,  result.uriContent)
         }
-    )
-
-
+    }
     TopAppBar(
         title = {
             Text(
@@ -137,7 +133,7 @@ fun TopBar(
                     }
                 }else{
                     StyledIconButton(
-                        imageVector = Icons.Default.Camera
+                        imageVector = Icons.Default.Image
                     ) {
                         if (
                             ContextCompat.checkSelfPermission(
@@ -148,17 +144,7 @@ fun TopBar(
                             TessHelper.checkPermission(context as Activity)
                             return@StyledIconButton
                         }
-                        val uri = ComposeFileProvider.getImageUri(context)
-                        imageUri = uri
-                        cameraLauncher.launch(uri)
-                    }
-                    StyledIconButton(
-                        imageVector = Icons.Default.Image
-                    ) {
-                        val request = PickVisualMediaRequest(
-                            ActivityResultContracts.PickVisualMedia.ImageOnly
-                        )
-                        fileChooser.launch(request)
+                        cropLauncher.launch(CropImageContractOptions(imageUri, cropImageOptions = CropImageOptions()))
                     }
                 }
 
