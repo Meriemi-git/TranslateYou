@@ -7,6 +7,7 @@ import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import com.bnyro.translate.R
 import com.bnyro.translate.ext.toastFromMainThread
@@ -148,11 +149,10 @@ object TessHelper {
 
     private const val baseUrl = "https://raw.githubusercontent.com/tesseract-ocr/tessdata/main"
 
-    fun getText(context: Context, uri: Uri?): String? {
-        val tess = TessBaseAPI()
-
+    private lateinit var tess: TessBaseAPI;
+    fun getText(context: Context, uri: Uri?, notifier : TessBaseAPI.ProgressNotifier): String? {
+        tess = TessBaseAPI(notifier)
         uri ?: return null
-
         val language = Preferences.get(Preferences.tessLanguageKey, "eng")
         val rootDir = getRootDir(context)
 
@@ -167,10 +167,10 @@ object TessHelper {
         } ?: return null
 
         tess.setImage(bitmap)
-
-        return tess.utF8Text.also {
-            tess.recycle()
-        }
+        tess.getHOCRText(0)
+        tess.getHOCRText(0)
+        var text = tess.utF8Text
+        return text
     }
 
     fun downloadLanguageData(context: Context, language: String) {
@@ -214,6 +214,12 @@ object TessHelper {
                 arrayOf(Manifest.permission.CAMERA),
                 0
             )
+        }
+    }
+
+    fun stopProcessing(){
+        if(tess != null){
+            tess.clear();
         }
     }
 }

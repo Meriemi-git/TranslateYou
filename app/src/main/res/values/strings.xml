@@ -82,4 +82,6 @@
     <string name="init_tess_first">Please download language data in the settings first.</string>
     <string name="select_language">Please select a language for the text recognition of images in the settings.</string>
     <string name="extracting_text">Extracting text ...</string>
+    <string name="cannot_extract_text">Cannot extract text</string>
+    <string name="no_text_found">No text found on image</string>
 </resources>

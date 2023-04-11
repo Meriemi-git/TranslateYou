@@ -8,9 +8,11 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.speech.SpeechRecognizer
+import android.widget.TextView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Camera
@@ -31,9 +33,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.bnyro.translate.R
 import com.bnyro.translate.obj.MenuItemData
@@ -44,6 +51,7 @@ import com.bnyro.translate.util.ClipboardHelper
 import com.bnyro.translate.util.ComposeFileProvider
 import com.bnyro.translate.util.SpeechHelper
 import com.bnyro.translate.util.TessHelper
+import java.time.format.TextStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,6 +94,7 @@ fun TopBar(
         actions = {
 
             if (mainModel.insertedText == "" && SpeechRecognizer.isRecognitionAvailable(context)) {
+
                 StyledIconButton(
                     imageVector = Icons.Default.Mic
                 ) {
@@ -109,13 +118,22 @@ fun TopBar(
             if (mainModel.insertedText == "") {
 
                 if(mainModel.extracting){
-                    val modifier = Modifier
+                    val circcularModifier = Modifier
                         .align(Alignment.CenterVertically)
                         .size(30.dp)
+
                     if (mainModel.extracting) {
-                        CircularProgressIndicator(
-                            modifier = modifier
-                        )
+                        Box(contentAlignment = Alignment.Center){
+                            Text(
+                                "${mainModel.extractionProgess}%",
+                                textAlign = TextAlign.Center,
+                                fontSize = 10.sp
+                            )
+                            CircularProgressIndicator(
+                                modifier = circcularModifier
+                            )
+                        }
+
                     }
                 }else{
                     StyledIconButton(

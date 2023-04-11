@@ -23,9 +23,19 @@ import com.bnyro.translate.util.JsonHelper
 import com.bnyro.translate.util.Preferences
 import com.bnyro.translate.util.TessHelper
 import com.bnyro.translate.util.TranslationEngine
+import com.googlecode.tesseract.android.TessBaseAPI
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.decodeFromString
 
 class TranslationModel : ViewModel() {
@@ -65,9 +75,11 @@ class TranslationModel : ViewModel() {
 
     var translating by mutableStateOf(false)
 
+    var extractionProgess by mutableStateOf(0)
+
     var extracting by mutableStateOf(false)
 
-
+    var extractionJob: Job = Job()
     private fun getLanguageByPrefKey(key: String): Language? {
         return try {
             JsonHelper.json.decodeFromString<Language>(Preferences.get(key, ""))
@@ -175,6 +187,13 @@ class TranslationModel : ViewModel() {
         extracting = false
         insertedText = ""
         translation = Translation("")
+        Log.w("TranslateYou", "Extraction cancelled")
+        if(extractionJob.isActive){
+            TessHelper.stopProcessing();
+        }
+        extractionJob.cancel();
+        extractionProgess = 0
+
     }
 
     private fun fetchLanguages(onError: (Exception) -> Unit = {}) {
@@ -192,7 +211,7 @@ class TranslationModel : ViewModel() {
     }
 
     private fun getCurrentEngine() = TranslationEngines.engines[
-        Preferences.get(Preferences.apiTypeKey, 0)
+            Preferences.get(Preferences.apiTypeKey, 0)
     ]
 
     private fun getEnabledEngines() = TranslationEngines.engines.filter {
@@ -222,18 +241,41 @@ class TranslationModel : ViewModel() {
             Toast.makeText(context, R.string.init_tess_first, Toast.LENGTH_SHORT).show()
             return
         }
-        Toast.makeText(context, R.string.extracting_text, Toast.LENGTH_LONG).show()
-        extracting = true;
-        Thread {
-            TessHelper.getText(context, uri)?.let {
-                Handler(
-                    Looper.getMainLooper()
-                ).post(){
-                    extracting = false
+        Toast.makeText(context, R.string.extracting_text, Toast.LENGTH_SHORT).show()
+        extracting = true
+
+        viewModelScope.launch(Dispatchers.Default) {
+            try {
+                withTimeout(60000L) {
+                    var text : String? = ""
+                    extractionJob = GlobalScope.launch {
+                        text = TessHelper.getText(context, uri,
+                             { extractionProgess = it.percent })
+                    }
+                    extractionJob.join()
+                    if (text != null && !extractionJob.isCancelled) {
+                        insertedText = text as String;
+                        translateNow()
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, R.string.no_text_found, Toast.LENGTH_LONG)
+                                .show()
+                        }
+                    }
                 }
-                insertedText = it
-                translateNow()
+            } catch (e: TimeoutCancellationException) {
+                withContext(Dispatchers.Main){
+                    Toast.makeText(context, R.string.cannot_extract_text, Toast.LENGTH_LONG).show();
+                }
+            } catch(e: java.lang.Exception) {
+                withContext(Dispatchers.Main){
+                    Toast.makeText(context, R.string.unknown_error, Toast.LENGTH_LONG).show();
+                }
             }
-        }.start()
+            finally {
+                extracting = false
+                extractionProgess = 0
+            }
+        }
     }
 }
