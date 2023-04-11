@@ -1,9 +1,13 @@
 package com.bnyro.translate.util
 
+import android.Manifest
+import android.app.Activity
 import android.app.DownloadManager
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
+import androidx.core.app.ActivityCompat
 import com.bnyro.translate.R
 import com.bnyro.translate.ext.toastFromMainThread
 import com.googlecode.tesseract.android.TessBaseAPI
@@ -201,5 +205,15 @@ object TessHelper {
 
     private fun getTessDir(context: Context) = File(getRootDir(context), "tessdata").also {
         if (!it.exists()) it.mkdirs()
+    }
+
+    fun checkPermission(activity: Activity) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            ActivityCompat.requestPermissions(
+                activity,
+                arrayOf(Manifest.permission.CAMERA),
+                0
+            )
+        }
     }
 }

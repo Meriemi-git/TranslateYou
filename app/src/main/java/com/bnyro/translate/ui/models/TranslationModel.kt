@@ -65,6 +65,9 @@ class TranslationModel : ViewModel() {
 
     var translating by mutableStateOf(false)
 
+    var extracting by mutableStateOf(false)
+
+
     private fun getLanguageByPrefKey(key: String): Language? {
         return try {
             JsonHelper.json.decodeFromString<Language>(Preferences.get(key, ""))
@@ -97,6 +100,7 @@ class TranslationModel : ViewModel() {
         }
 
         translating = true
+        extracting = false
 
         translatedTexts = TranslationEngines.engines
             .associate { it.name to Translation("") }
@@ -168,6 +172,7 @@ class TranslationModel : ViewModel() {
     }
 
     fun clearTranslation() {
+        extracting = false
         insertedText = ""
         translation = Translation("")
     }
@@ -217,8 +222,15 @@ class TranslationModel : ViewModel() {
             Toast.makeText(context, R.string.init_tess_first, Toast.LENGTH_SHORT).show()
             return
         }
+        Toast.makeText(context, R.string.extracting_text, Toast.LENGTH_LONG).show()
+        extracting = true;
         Thread {
             TessHelper.getText(context, uri)?.let {
+                Handler(
+                    Looper.getMainLooper()
+                ).post(){
+                    extracting = false
+                }
                 insertedText = it
                 translateNow()
             }
